@@ -1,59 +1,166 @@
 # Instructions for AI agents
 
-This file is the entry point for AI coding agents working in this repository.
+This file is the entry point. Read it fully, then load only the documents
+relevant to the task (see **Task routing**). Do not preload the whole `docs/`
+tree for every task.
+
+## Project snapshot (last verified 2026-11-14)
+
+- **Working name:** OpenVAG Diagnostic. Provisional; not affiliated with
+  Volkswagen, Audi, or Ross-Tech.
+- **License:** Apache-2.0 (`LICENSE`, `NOTICE`). Public repository:
+  <https://github.com/vntoshkv/OpenVAG>, branch `main`.
+- **Goal:** independent, community-maintained diagnostic platform for VAG
+  vehicles; architecture may later support other makes.
+- **Validation target:** Volkswagen Touareg NF / 7P, 3.6 FSI, engine code CMTA.
+- **Available hardware:** ELM327 over Wi-Fi and ELM327 over Bluetooth classic;
+  models, firmware, and clone behavior are unverified. A Chinese USB
+  VCDS-compatible cable is not confirmed to be available. No real adapter or
+  vehicle test has been completed.
+- **Runtime:** Python >=3.9 (3.9 is EOL; floor under review), standard-library
+  core, optional `pyserial` extra for Bluetooth/USB serial.
+- **Implemented:**
+  - read-only ELM327 boundary with echo/chatter normalization, multi-ECU
+    responses, adapter identification, and error classification;
+  - deterministic simulator;
+  - Wi-Fi TCP and Bluetooth/USB serial transports;
+  - capability-gated OBD-II snapshot: `0100/0120/0140`, monitor status,
+    curated mode 01 live data, stored/pending/permanent DTCs (`03/07/0A`),
+    raw response hex;
+  - CLI and one-command collector (`./collect.sh` → `scripts/collect_logs.py`)
+    writing JSON and Markdown under `logs/` (git-ignored).
+- **Not implemented:** freeze frame (`02`), mode 06, mode 09 identifiers,
+  O2-sensor PIDs, full readiness-bit semantics, VAG module/UDS access, session
+  schema/reporting, desktop UI, and any write/coding/adaptation/actuator/
+  security-access operation.
+- **Tests/CI:** `PYTHONPATH=src python3 -m unittest discover -s tests -v`
+  (45 tests at last check). GitHub Actions runs Linux/Windows/macOS on
+  Python 3.9/3.12; hardware is never tested in CI.
+
+If this snapshot conflicts with code or tests, code/tests win. Update this file
+when behavior, safety assumptions, or the project status materially change.
 
 ## Before making changes
-1. Read `README.md`, `docs/PROJECT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DATA_AND_SAFETY.md`, and `docs/DECISIONS.md`.
-2. Inspect the existing repository and tests before proposing or implementing architecture. Do not assume planned modules already exist.
-3. Identify the smallest useful change, implement it, and add or update tests.
-4. State what was actually tested. Never claim hardware compatibility without evidence from the relevant device and vehicle configuration.
 
-## Project identity
-- Working name: **OpenVAG Diagnostic**. This is a provisional name, not a claim of affiliation with Volkswagen, Audi, or Ross-Tech.
-- Goal: build an independent, open-source, community-maintained diagnostic platform for VAG vehicles, with an architecture that can later support other vehicles where practical.
-- Initial development target: Python, Windows-first for developer convenience, with cross-platform design where feasible.
-- Initial validation vehicle: Volkswagen Touareg NF / 7P, 3.6 FSI, engine code CMTA.
-- Initially available adapters: ELM327 over Wi-Fi and ELM327 over Bluetooth classic (model, firmware, and clone behavior unverified); a Chinese USB VCDS-compatible cable is not confirmed to be available. See `docs/HARDWARE.md`. Exact hardware, firmware, protocol support, and third-party compatibility are not yet verified.
+1. Inspect the relevant existing code and tests. Do not assume a planned module
+   exists.
+2. Identify the smallest useful change; implement it and add or update tests.
+3. Read only the routed documents for the task, not all of `docs/`.
+4. State what was actually tested. Never claim hardware compatibility without
+   an observed transcript from the named device and vehicle configuration.
+5. If a requirement is ambiguous or could cause an ECU write, stop and ask.
 
-## Non-negotiable engineering principles
-- Prefer documented standards, open-source components, public documentation, and independently gathered measurements.
-- Do not decompile, disassemble, extract proprietary databases from, or copy closed-source VCDS/ODIS internals. Do not use them as a template in ways prohibited by their licenses. Build an independent implementation.
-- Do not copy proprietary data or documentation into the repository without a clear right to redistribute it. Record provenance and license for imported datasets and dependencies.
-- Treat all hardware and vehicle compatibility as unverified until tested. Clearly distinguish protocol capability from support implemented in this project.
-- Default to read-only operations. Any write, coding, adaptation, actuator test, routine control, security access, or destructive operation must be explicit, gated, logged, and documented before implementation.
-- Never silently guess diagnostic addresses, identifiers, scaling formulas, byte order, units, or vehicle applicability.
-- Never present simulated results as real vehicle data.
-- Do not add dependencies without explaining why they are needed and checking their licenses and maintenance status.
-- Keep modules small, typed where useful, testable, and documented. Prefer interfaces and dependency injection over hardware-specific assumptions.
-- Never commit vehicle-identifying data, VINs, license plates, customer records, access keys, logs with personal data, or secrets unless explicitly sanitized and necessary.
+## Commands
 
-## Data quality
-Every vehicle-specific item should, where applicable, include:
-- source and provenance;
-- license or redistribution status;
-- vehicle/platform and ECU applicability;
-- ECU hardware/software identifiers or known version constraints;
-- verification status and method;
-- units, scaling, byte order, and decoding notes;
-- confidence and known limitations.
+```shell
+# Tests (no hardware, no third-party dependency)
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 
-Use the verification vocabulary in `docs/DATA_AND_SAFETY.md`. Unknown values must remain explicitly unknown rather than being filled with plausible guesses.
+# Simulator
+PYTHONPATH=src python3 -m openvag.cli --simulate --session /tmp/session.json
 
-## Workflow
-- Start with a brief plan for non-trivial changes.
-- Make changes in small, reviewable increments.
-- Add unit tests for pure logic and simulator-based integration tests for protocol behavior.
-- Hardware tests must be optional and must not run automatically in CI.
-- Run the relevant tests and report commands/results accurately.
-- Update docs when behavior, interfaces, data formats, or safety assumptions change.
-- Do not make broad refactors unrelated to the task.
-- Do not create empty scaffolding for speculative features unless the user explicitly asks for it.
-- If a requirement is ambiguous or a change could cause writes to an ECU, stop and ask for clarification.
+# Real Wi-Fi ELM327
+PYTHONPATH=src python3 -m openvag.cli --tcp 192.168.0.10:35000 --session /tmp/wifi.json
 
-## Definition of done
-A change is not complete until:
-1. behavior and limitations are documented;
-2. tests cover the change or the absence of tests is explained;
-3. no unsupported compatibility claim is introduced;
-4. licensing/provenance concerns are addressed for new dependencies or data;
-5. the final response summarizes changed files, tests run, and remaining risks.
+# Real Bluetooth/USB ELM327 (needs: python -m pip install -e '.[serial]')
+PYTHONPATH=src python3 -m openvag.cli --list-ports
+PYTHONPATH=src python3 -m openvag.cli --serial /dev/cu.ELM327-XXXX --baud 38400 --session /tmp/bt.json
+
+# One command for both adapters, with logs/
+./collect.sh
+```
+
+`collect.sh` bootstraps `.venv`, installs the serial extra once, prompts for
+each adapter, and writes `logs/collect-*.json` and `.md`. Never commit `.venv`
+or `logs/`.
+
+## Source map
+
+| File | Responsibility |
+|---|---|
+| `src/openvag/transport.py` | `LineTransport` contract: response lines, no prompt |
+| `src/openvag/elm327.py` | Read-only allowlist, ELM normalization, timeouts, adapter info |
+| `src/openvag/obd.py` | Standard OBD-II PID/bitmap/DTC decoders |
+| `src/openvag/tcp_transport.py` | Wi-Fi TCP bridge |
+| `src/openvag/serial_transport.py` | Bluetooth/USB serial; lazy optional pyserial |
+| `src/openvag/simulator.py` | Deterministic test/CLI fixtures |
+| `src/openvag/session.py` | JSON session record |
+| `src/openvag/cli.py` | Snapshot collection, CLI, error/status mapping |
+| `scripts/collect_logs.py`, `collect.sh` | Interactive two-adapter collector and logs |
+| `tests/` | Unit, simulator, loopback TCP, fake-serial, CLI/collector tests |
+
+Data flow: CLI/collector → `Elm327Adapter` → `LineTransport` → ELM327 → ECU.
+Decoders consume one ECU response at a time. `response_index` is an ordering
+hint only; ELM headers are disabled (`ATH0`), so it is not a verified ECU ID.
+
+## Non-negotiable safety and legal constraints
+
+- **Read-only by default.** The request allowlist lives in `elm327.py`. Any
+  write, coding, adaptation, actuator test, routine control, security access,
+  or ECU reset requires a separate design, explicit user intent, logging, and
+  safety review. Do not implement such operations opportunistically.
+- **No guessing.** Do not invent ECU addresses, diagnostic identifiers, PID
+  formulas, scaling, byte order, units, or vehicle applicability. Unknown
+  values stay explicitly unknown.
+- **No simulation as vehicle data.** Every result source must be labelled
+  (`real`, `simulator`, `mock`, imported recording).
+- **Hardware is unverified.** A successful simulator, loopback, or fake-device
+  test is not vehicle compatibility. Hardware tests are manual and opt-in.
+- **Independence.** Do not decompile, disassemble, extract proprietary
+  databases from, or copy closed-source VCDS/ODIS internals. Do not copy code
+  or data without a compatible license and recorded provenance. GPL-family code
+  is incompatible with this Apache-2.0 project.
+- **Privacy.** Never commit VINs, registration plates, customer records,
+  access keys, raw logs with personal data, or secrets. Sessions and logs can
+  contain vehicle-related data; keep them out of the repository.
+- **Dependencies.** The core is dependency-free. Add a dependency only with a
+  recorded reason, license/maintenance check, and preferably an optional extra.
+  See `docs/DEPENDENCY_REVIEW.md`.
+
+## Data rules
+
+- Every vehicle-specific definition needs source/provenance, applicability,
+  units/formula/byte order, verification state, and known limits.
+- Use the verification vocabulary in `docs/DATA_AND_SAFETY.md`. The current
+  standard PIDs are `simulator-tested`, not vehicle-verified.
+- Request PIDs only when advertised by the supported-PID bitmap. Preserve raw
+  response hex for evidence; do not silently drop failed/unsupported requests.
+
+## Task routing
+
+| Task | Read only |
+|---|---|
+| Add/change a PID or decoder | `docs/OBD_PIDS.md`, `docs/DATA_AND_SAFETY.md`, `src/openvag/obd.py`, relevant tests |
+| Transport/adapter behavior | `docs/ARCHITECTURE.md`, `docs/HARDWARE.md`, `docs/DECISIONS.md` (D-010), transport code |
+| Session format, redaction, export | `docs/DATA_AND_SAFETY.md`, `docs/ROADMAP.md` (M2/M3), `docs/DECISIONS.md` (O-006) |
+| VAG modules, UDS, recon | `docs/PROJECT_VISION.md`, `docs/ROADMAP.md` (M3/M6), `docs/DECISIONS.md`; recon first, no guessed addresses |
+| Licensing/dependencies/data provenance | `docs/DEPENDENCY_REVIEW.md`, `LICENSE`, `NOTICE`, `AGENTS.md` rules above |
+| User-facing overview/commands | `README.md` (only when needed) |
+| Safety change or write proposal | Stop and ask; then `docs/DATA_AND_SAFETY.md` + `docs/ARCHITECTURE.md` |
+
+Do not read `docs/PROJECT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`,
+`docs/DATA_AND_SAFETY.md`, and `docs/DECISIONS.md` all at once by habit. The
+routing table exists to keep context small.
+
+## Workflow and definition of done
+
+- Start non-trivial changes with a brief plan; keep increments small and
+  reviewable.
+- Add unit tests for pure logic and simulator/loopback/fake-device integration
+  tests for protocol behavior. Hardware tests must not run in CI.
+- Update docs when behavior, interfaces, data formats, or safety assumptions
+  change.
+- Do not create empty scaffolding for speculative features.
+- A change is done only when: behavior/limitations are documented; tests cover
+  it (or the absence is explained); no unsupported compatibility claim is
+  introduced; licensing/provenance is addressed; and the final response lists
+  changed files, tests run, and remaining risks.
+
+## Token discipline for future sessions
+
+- This file plus a targeted file read is usually enough to start.
+- Use `git grep`/file reads for specific symbols; do not dump whole directories.
+- Trust the test command and current snapshot; re-read only files whose
+  contents you are about to change.
+- Do not paste or summarize entire documents unless the user asks.
+- Keep hardware logs out of context unless a task needs a specific transcript.
