@@ -1,0 +1,9 @@
+OpenVAG Diagnostic
+Copyright 2026 OpenVAG contributors
+
+This product includes software developed by the OpenVAG Diagnostic project
+(https://github.com/vntoshkv/OpenVAG).
+
+The project is licensed under the Apache License, Version 2.0. See LICENSE.
+Third-party components, when added, retain their own licenses and notices;
+see docs/DEPENDENCY_REVIEW.md and any future third-party notice files.

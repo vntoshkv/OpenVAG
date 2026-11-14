@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editor metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local diagnostic artifacts: may contain vehicle-identifying data
+sessions/
+*.session.json
+simulated-session.json
+logs/
+*.log
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+
+# Local AI/agent tooling state. These are per-machine artifacts, not project
+# content. AGENTS.md is intentionally tracked: it is the repository's
+# contribution policy for AI agents, not a local cache.
+.dsh/
+.claude/
+.cursor/
+.continue/
+.codex/
+.aider*
+.windsurf/
+.specstory/
+
