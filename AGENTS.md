@@ -34,7 +34,7 @@ tree for every task.
   schema/reporting, desktop UI, and any write/coding/adaptation/actuator/
   security-access operation.
 - **Tests/CI:** `PYTHONPATH=src python3 -m unittest discover -s tests -v`
-  (45 tests at last check). GitHub Actions runs Linux/Windows/macOS on
+  (46 tests at last check). GitHub Actions runs Linux/Windows/macOS on
   Python 3.9/3.12; hardware is never tested in CI.
 
 If this snapshot conflicts with code or tests, code/tests win. Update this file
@@ -68,6 +68,9 @@ PYTHONPATH=src python3 -m openvag.cli --serial /dev/cu.ELM327-XXXX --baud 38400 
 
 # One command for both adapters, with logs/
 ./collect.sh
+
+# Hardware-free dry run through the same log path
+./collect.sh --simulate
 ```
 
 `collect.sh` bootstraps `.venv`, installs the serial extra once, prompts for
@@ -136,6 +139,7 @@ hint only; ELM headers are disabled (`ATH0`), so it is not a verified ECU ID.
 | VAG modules, UDS, recon | `docs/PROJECT_VISION.md`, `docs/ROADMAP.md` (M3/M6), `docs/DECISIONS.md`; recon first, no guessed addresses |
 | Licensing/dependencies/data provenance | `docs/DEPENDENCY_REVIEW.md`, `LICENSE`, `NOTICE`, `AGENTS.md` rules above |
 | User-facing overview/commands | `README.md` (only when needed) |
+| Car-day preparation or log collection | `docs/CAR_DAY.md`, `docs/HARDWARE.md`, collector code |
 | Safety change or write proposal | Stop and ask; then `docs/DATA_AND_SAFETY.md` + `docs/ARCHITECTURE.md` |
 
 Do not read `docs/PROJECT_VISION.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`,

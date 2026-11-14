@@ -86,6 +86,16 @@ each adapter step, and writes a combined JSON log plus a Markdown summary to
 - `logs/collect-YYYYMMDD-HHMMSS.md` — adapter summary, live data, DTCs, and
   non-ok results.
 
+Before going to the car, run the hardware-free dry run:
+
+```shell
+./collect.sh --simulate
+```
+
+It exercises the same snapshot and log-writing path against the deterministic
+simulator. The full pre-trip and at-car procedure is in
+[`docs/CAR_DAY.md`](docs/CAR_DAY.md).
+
 The script is read-only and never sends coding, adaptation, actuator, or
 security-access requests. `logs/` is git-ignored. It cannot join the Wi-Fi
 network or pair Bluetooth for you; it pauses and asks you to do that.
@@ -168,6 +178,7 @@ one receives a separate safety review.
 - [`docs/OBD_PIDS.md`](docs/OBD_PIDS.md) — supported OBD-II PIDs, formulas, units, and verification status.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — decisions and open questions.
 - [`docs/HARDWARE.md`](docs/HARDWARE.md) — reference hardware and identification procedure.
+- [`docs/CAR_DAY.md`](docs/CAR_DAY.md) — pre-trip and at-car read-only checklist.
 - [`docs/DEPENDENCY_REVIEW.md`](docs/DEPENDENCY_REVIEW.md) — dependency and license review.
 
 ## License

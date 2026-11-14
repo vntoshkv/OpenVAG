@@ -74,8 +74,9 @@ The easiest path is the one-command collector from the repository root:
 
 It pauses for the Wi-Fi connection, runs the snapshot, then pauses for the
 Bluetooth adapter and runs that too, writing JSON and Markdown logs under
-`logs/`. Use `./collect.sh --no-serial` for Wi-Fi only. The manual steps below
-remain useful when diagnosing a failure.
+`logs/`. Use `./collect.sh --no-serial` for Wi-Fi only, and
+`./collect.sh --simulate` for a hardware-free dry run. The pre-trip and at-car
+procedure is in [`CAR_DAY.md`](CAR_DAY.md).
 
 This is a manual, opt-in hardware step. It performs read-only requests only.
 

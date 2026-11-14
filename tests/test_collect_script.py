@@ -1,6 +1,10 @@
 import argparse
 import importlib.util
+import io
+import json
+import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 _SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "collect_logs.py"
@@ -65,3 +69,24 @@ class CollectLogsScriptTests(unittest.TestCase):
         self.assertIn("engine_rpm", report)
         self.assertIn("1726.000", report)
         self.assertIn("127.0.0.1:35000", report)
+
+    def test_simulate_writes_dry_run_json_and_markdown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = collect_logs.main(["--simulate", "--output-dir", directory])
+            self.assertEqual(code, 0)
+
+            json_files = sorted(Path(directory).glob("collect-*.json"))
+            markdown_files = sorted(Path(directory).glob("collect-*.md"))
+            self.assertEqual(len(json_files), 1)
+            self.assertEqual(len(markdown_files), 1)
+
+            data = json.loads(json_files[0].read_text(encoding="utf-8"))
+            self.assertEqual(data["schema"], "openvag-collect-1")
+            self.assertEqual(len(data["runs"]), 1)
+            run = data["runs"][0]
+            self.assertEqual(run["transport"], "simulator")
+            self.assertEqual(run["status"], "ok")
+            self.assertGreaterEqual(len(run["results"]), 20)
+            self.assertEqual(run["adapter"]["transport"], "simulator")

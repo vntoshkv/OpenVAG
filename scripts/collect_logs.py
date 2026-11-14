@@ -30,6 +30,7 @@ from openvag.cli import collect_read_only_snapshot  # noqa: E402
 from openvag.elm327 import AdapterCapabilities, Elm327Adapter  # noqa: E402
 from openvag.errors import AdapterUnavailableError, DiagnosticError  # noqa: E402
 from openvag.serial_transport import SerialLineTransport, list_serial_ports  # noqa: E402
+from openvag.simulator import SimulatedElm327Transport  # noqa: E402
 from openvag.tcp_transport import TcpLineTransport  # noqa: E402
 
 _EXCLUDED_PORT_HINTS = (
@@ -284,6 +285,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--no-serial", action="store_true", help="skip the Bluetooth/USB adapter")
     parser.add_argument("--baud", type=int, default=38400, help="serial baud rate (default: 38400)")
     parser.add_argument(
+        "--simulate",
+        action="store_true",
+        help="run one deterministic simulator snapshot and write a dry-run log",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=REPO_ROOT / "logs",
@@ -292,7 +298,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--yes", action="store_true", help="do not pause before each adapter step")
     args = parser.parse_args(argv)
 
-    if args.no_wifi and args.no_serial:
+    if args.no_wifi and args.no_serial and not args.simulate:
         parser.error("both adapters are disabled; nothing to do")
     if args.no_serial and args.serial:
         parser.error("--serial cannot be combined with --no-serial")
@@ -302,14 +308,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     created_at = datetime.now(timezone.utc).isoformat()
     runs: List[Dict[str, object]] = []
 
-    if not args.no_wifi:
+    if args.simulate:
+        runs.append(
+            run_snapshot(SimulatedElm327Transport(), "simulator", "deterministic simulator")
+        )
+    elif not args.no_wifi:
         wait_for_user(
             "1) Join the ELM327 Wi-Fi access point (commonly 192.168.0.10).", args.yes
         )
         host, port = args.wifi
         runs.append(run_snapshot(TcpLineTransport(host, port), "tcp", "{}:{}".format(host, port)))
 
-    if not args.no_serial:
+    if not args.simulate and not args.no_serial:
         wait_for_user(
             "2) Pair the Bluetooth adapter and make sure its /dev/cu.* port exists.", args.yes
         )
