@@ -10,6 +10,7 @@ performed yet.
 |---|---|---|---|
 | ELM327-compatible adapter | TCP socket to the adapter's access point | Unknown; reported PIC-based v1.5-compatible board | `unverified` |
 | ELM327-compatible adapter | Classic Bluetooth SPP, exposed by the OS as a serial device | Unknown; reported PIC-based v1.5-compatible board | `unverified` |
+| HEX-USB VCDS-compatible cable | Unknown USB interface (clone; not assumed serial/J2534) | Model and firmware unknown | `unverified`; not supported |
 
 Initial development environment: macOS on Apple silicon, Python 3.9.6. Python
 3.9 is end-of-life; the compatibility floor will be reviewed before public
@@ -46,7 +47,48 @@ string alone: clones frequently misreport it.
 An unanswered command is evidence too: it indicates a limitation of the clone
 and must be recorded as such rather than worked around silently.
 
-## 3. Known risks with ELM327 clones
+## 3. HEX-USB / VCDS-compatible cable (unverified)
+
+A Chinese clone of a Ross-Tech HEX-USB-style cable is available. Its USB
+VID/PID, driver, firmware, and protocol are unknown. It is **not** an ELM327,
+and it is not assumed to be J2534, a generic serial bridge, or a generic CAN
+interface.
+
+### Safe bench identification (USB only, no vehicle)
+
+1. Plug the cable into the Mac only; do not connect it to a vehicle yet.
+2. Record sanitized descriptors:
+
+   ```shell
+   system_profiler SPUSBDataType
+   ioreg -p IOUSB -l -w 0 | grep -i -A 20 -E 'HEX|VCDS|Ross|FTDI|CH34|CP210'
+   ls /dev/cu.*
+   ```
+
+3. Record VID/PID, manufacturer/product strings, interface class (HID,
+   CDC/serial, or vendor-specific), and whether a `/dev/cu.*` device appears.
+   Remove serial numbers and other device-identifying strings before sharing.
+4. Do not install driver packages or kexts, do not open VCDS, do not send ELM
+   AT commands, and do not sniff or dump firmware.
+
+### Decision gate
+
+- Generic USB-serial bridge **plus** a documented, lawful protocol: could be
+  evaluated as a separate transport. VID/PID alone is not sufficient.
+- HID or vendor-specific interface with no public protocol: out of scope.
+  Reverse engineering is prohibited by project policy.
+- J2534 API: separate evaluation; a J2534 DLL is not a protocol specification,
+  and the device must expose it legitimately.
+- No documented interface: no car connection and no write-capable use.
+
+### Car use
+
+Do not use the HEX-USB clone in the first read-only session. VCDS-compatible
+interfaces are write-capable tools; without a verified protocol and a safety
+review, they stay out of the diagnostic path. The first session uses only the
+ELM327 adapters and the read-only snapshot.
+
+## 4. Known risks with ELM327 clones
 
 - Firmware may be a clone that reports a version it does not fully implement.
 - AT command coverage, timing, and error text may differ from the ELM
@@ -57,14 +99,14 @@ and must be recorded as such rather than worked around silently.
   network changes, and reconnection behavior must be handled explicitly.
 - Bluetooth SPP behavior depends on the OS pairing stack and the adapter.
 
-## 4. Scope of the ELM327 path
+## 5. Scope of the ELM327 path
 
 ELM327-compatible adapters are intended here for standard OBD-II requests
 (read-only). They are not assumed to be a general ISO-TP/UDS transport for
 VAG modules. Reaching modules other than the engine requires a separate,
 documented transport decision and its own evidence; see the roadmap.
 
-## 5. First real Wi-Fi run
+## 6. First real Wi-Fi run
 
 The easiest path is the one-command collector from the repository root:
 
@@ -97,7 +139,7 @@ This is a manual, opt-in hardware step. It performs read-only requests only.
 If the first request times out, stop and capture the raw response rather than
 increasing timeouts blindly; the adapter may still be searching for a protocol.
 
-## 6. First real Bluetooth run
+## 7. First real Bluetooth run
 
 This is a manual, opt-in hardware step. It performs read-only requests only.
 
@@ -139,7 +181,7 @@ If no `/dev/cu.*` device appears, the module may not expose Bluetooth classic
 SPP, or pairing may have failed. Record that result rather than assuming the
 serial path is broken.
 
-## 7. What is explicitly not claimed
+## 8. What is explicitly not claimed
 
 - No adapter has been verified against any vehicle yet.
 - No simulated result is real vehicle data.

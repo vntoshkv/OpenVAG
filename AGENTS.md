@@ -14,9 +14,11 @@ tree for every task.
   vehicles; architecture may later support other makes.
 - **Validation target:** Volkswagen Touareg NF / 7P, 3.6 FSI, engine code CMTA.
 - **Available hardware:** ELM327 over Wi-Fi and ELM327 over Bluetooth classic;
-  models, firmware, and clone behavior are unverified. A Chinese USB
-  VCDS-compatible cable is not confirmed to be available. No real adapter or
-  vehicle test has been completed.
+  models, firmware, and clone behavior are unverified. A Chinese HEX-USB
+  VCDS-compatible cable is available, but it is a separate, unverified,
+  write-capable proprietary interface; it is not used in the ELM read-only
+  path until its interface and a lawful protocol are established. No real
+  adapter or vehicle test has been completed.
 - **Runtime:** Python >=3.9 (3.9 is EOL; floor under review), standard-library
   core, optional `pyserial` extra for Bluetooth/USB serial.
 - **Implemented:**

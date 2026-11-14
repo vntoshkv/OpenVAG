@@ -91,8 +91,8 @@ Do not force generic CAN/UDS through the ELM327 backend. Future CAN/UDS support 
 **Action:** Record `ATZ`, `ATI`, `AT@1`, `ATDPN`, and `ATRV` output from each device, then decide the smallest reliable API.
 
 ### O-005 — VCDS-compatible cable
-**Status:** open; current inventory does not confirm that such a cable is available  
-**Action:** If one is obtained, record USB VID/PID, driver, device interface, and any documented SDK/API. Determine whether third-party communication is possible without proprietary protocol copying or unsafe firmware modification. Do not assume it behaves as a generic serial/CAN/J2534 adapter.
+**Status:** open; Chinese HEX-USB clone available, interface/protocol unverified  
+**Action:** Record USB VID/PID, manufacturer/product strings, interface class, driver, and whether a serial port appears. Do not install proprietary drivers, send ELM commands, sniff USB traffic, dump firmware, or connect it to a vehicle until a documented, lawful interface is established. Do not assume it behaves as a generic serial/CAN/J2534 adapter, and do not use it for the first read-only session.
 
 ### O-006 — Data schema
 **Status:** open  

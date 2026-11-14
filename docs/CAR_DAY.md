@@ -29,7 +29,11 @@ actuator, security-access, or DTC-clearing operation is part of this session.
 1. Park safely, apply the handbrake, select Park or Neutral.
 2. Switch ignition on. For meaningful live data, start the engine and let it
    idle; never work under the car during this procedure.
-3. Connect the ELM327 to the OBD port and confirm its power LED.
+3. Use the ELM327 adapters for this first read-only session. Leave the Chinese
+   HEX-USB/VCDS-compatible cable out of the car for now; it is a separate,
+   unverified, write-capable proprietary interface. See
+   [`HARDWARE.md`](HARDWARE.md).
+4. Connect the ELM327 to the OBD port and confirm its power LED.
 4. Prevent other phones/apps from connecting to the adapter.
 5. **Wi-Fi run:** join the adapter's access point. Note the laptop's IP and the
    gateway (commonly `192.168.0.10`). The laptop may lose internet; this is

@@ -37,6 +37,9 @@ Core principles:
 
 - Volkswagen Touareg NF / 7P, 3.6 FSI, engine code CMTA.
 - ELM327-compatible adapters over Wi-Fi and Bluetooth classic.
+- A Chinese HEX-USB VCDS-compatible cable is available, but it is a separate,
+  unverified, write-capable proprietary interface; it is not part of the first
+  ELM327 read-only path. See [`docs/HARDWARE.md`](docs/HARDWARE.md).
 - Adapter models, firmware, and compatibility are unverified.
 
 This is the first validation target, not a limit on the intended scope.
