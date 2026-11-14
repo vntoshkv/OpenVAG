@@ -33,7 +33,7 @@ def list_serial_ports() -> List[str]:
         from serial.tools import list_ports
     except ImportError as error:
         raise AdapterUnavailableError(
-            "pyserial is required for --list-ports; install with: pip install -e '.[serial]'"
+            "pyserial is required for serial support; install with: python -m pip install -e '.[serial]'"
         ) from error
     return sorted(port.device for port in list_ports.comports())
 

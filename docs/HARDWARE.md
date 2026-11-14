@@ -66,6 +66,17 @@ documented transport decision and its own evidence; see the roadmap.
 
 ## 5. First real Wi-Fi run
 
+The easiest path is the one-command collector from the repository root:
+
+```shell
+./collect.sh
+```
+
+It pauses for the Wi-Fi connection, runs the snapshot, then pauses for the
+Bluetooth adapter and runs that too, writing JSON and Markdown logs under
+`logs/`. Use `./collect.sh --no-serial` for Wi-Fi only. The manual steps below
+remain useful when diagnosing a failure.
+
 This is a manual, opt-in hardware step. It performs read-only requests only.
 
 1. Join the ELM327 Wi-Fi access point from the development machine.

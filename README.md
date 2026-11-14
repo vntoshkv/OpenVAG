@@ -69,6 +69,40 @@ The Wi-Fi transport is covered by loopback tests and the serial transport by
 fake-device tests. No real adapter has been verified against a vehicle, and
 the included simulated data must never be represented as vehicle data.
 
+## One-command collection
+
+On macOS/Linux, run the collector from the repository root:
+
+```shell
+./collect.sh
+```
+
+It creates/uses `.venv`, installs the optional serial extra, prompts before
+each adapter step, and writes a combined JSON log plus a Markdown summary to
+`logs/`:
+
+- `logs/collect-YYYYMMDD-HHMMSS.json` — full snapshot, including raw response
+  hex;
+- `logs/collect-YYYYMMDD-HHMMSS.md` — adapter summary, live data, DTCs, and
+  non-ok results.
+
+The script is read-only and never sends coding, adaptation, actuator, or
+security-access requests. `logs/` is git-ignored. It cannot join the Wi-Fi
+network or pair Bluetooth for you; it pauses and asks you to do that.
+
+Useful flags:
+
+```shell
+./collect.sh --no-serial                  # Wi-Fi only
+./collect.sh --no-wifi                    # Bluetooth only, auto-detect port
+./collect.sh --no-wifi --serial /dev/cu.ELM327-XXXX
+./collect.sh --yes                        # do not pause before each step
+```
+
+If you prefer to manage the environment yourself, the manual commands are
+below. The cross-platform entry point is
+[`scripts/collect_logs.py`](scripts/collect_logs.py).
+
 ## Quick start
 
 ```shell
