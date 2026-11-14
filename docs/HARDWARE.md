@@ -62,7 +62,28 @@ ELM327-compatible adapters are intended here for standard OBD-II requests
 VAG modules. Reaching modules other than the engine requires a separate,
 documented transport decision and its own evidence; see the roadmap.
 
-## 5. What is explicitly not claimed
+## 5. First real Wi-Fi run
+
+This is a manual, opt-in hardware step. It performs read-only requests only.
+
+1. Join the ELM327 Wi-Fi access point from the development machine.
+2. Confirm the bridge address and port (commonly `192.168.0.10:35000`).
+3. Run:
+
+   ```shell
+   PYTHONPATH=src python3 -m openvag.cli --tcp 192.168.0.10:35000 --session wifi-session.json
+   ```
+
+4. Record the observed `ATI`, `AT@1`, and `ATDPN` output here with the date,
+   adapter label, host OS, and the vehicle state (ignition on/off, engine
+   running/not running).
+5. Label the result `observed`, not `verified`. Do not commit a session that
+   contains vehicle-identifying data; sessions are ignored by git by default.
+
+If the first request times out, stop and capture the raw response rather than
+increasing timeouts blindly; the adapter may still be searching for a protocol.
+
+## 6. What is explicitly not claimed
 
 - No adapter has been verified against any vehicle yet.
 - No simulated result is real vehicle data.
