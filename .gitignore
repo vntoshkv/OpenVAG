@@ -19,7 +19,7 @@ Thumbs.db
 # Local diagnostic artifacts: may contain vehicle-identifying data
 sessions/
 *.session.json
-simulated-session.json
+*-session.json
 logs/
 *.log
 

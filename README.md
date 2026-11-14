@@ -10,9 +10,10 @@ verified vehicle knowledge. It is not an official Volkswagen, Audi, or
 Ross-Tech product and is not affiliated with those companies.
 
 > **Project status:** an initial simulated, read-only OBD-II vertical slice
-> exists. There is no hardware backend yet. Adapter compatibility, vehicle
-> support, and data coverage are not finalized. The code is licensed under
-> Apache-2.0. Do not infer real-vehicle support from simulator results.
+> exists. A Wi-Fi TCP transport is implemented, but no hardware run has been
+> verified. Adapter compatibility, vehicle support, and data coverage are not
+> finalized. The code is licensed under Apache-2.0. Do not infer real-vehicle
+> support from simulator results.
 
 **Repository:** <https://github.com/vntoshkv/OpenVAG>
 
@@ -44,20 +45,25 @@ This is the first validation target, not a limit on the intended scope.
 
 The repository contains a dependency-free Python prototype with:
 
-- a small read-only ELM327 command boundary;
+- a small read-only ELM327 command boundary with echo/chatter normalization,
+  separate handling of multiple ECU responses, and explicit error
+  classification;
+- adapter identification (`ATI`, `AT@1`, `ATDPN`) and per-command timeouts;
 - a deterministic simulator;
 - standard OBD-II decoding for supported-PID capability bits, engine RPM,
   vehicle speed, and stored DTCs;
-- JSON session records; and
-- a simulator-only CLI.
+- a Wi-Fi TCP transport for ELM327 bridges; and
+- JSON session records with adapter metadata.
 
 It accepts only the read-only requests `0100`, `010C`, `010D`, and `03`. It
 cannot clear DTCs or send other diagnostic requests. Each request is recorded
-independently, so an unsupported or failed request does not discard successful
-results.
+independently, so an unsupported, negative, malformed, or failed request does
+not discard successful results.
 
-There is deliberately no serial, TCP, or Bluetooth backend yet. The included
-simulated data must never be represented as vehicle data.
+The Wi-Fi transport is covered by loopback tests. There is deliberately no
+serial or Bluetooth backend yet, and no real adapter has been verified against
+a vehicle. The included simulated data must never be represented as vehicle
+data.
 
 ## Quick start
 
@@ -68,6 +74,16 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 -m openvag.cli --simulate --session simulated-session.json
 ```
 
+Real Wi-Fi adapter (read-only; join the adapter's access point first). The
+address and port vary by device; an ELM327 Wi-Fi bridge commonly uses
+`192.168.0.10:35000`:
+
+```shell
+PYTHONPATH=src python3 -m openvag.cli --tcp 192.168.0.10:35000 --session wifi-session.json
+```
+
+No real adapter has been verified yet; see [`docs/HARDWARE.md`](docs/HARDWARE.md).
+
 Editable install (provides the `openvag` console script):
 
 ```shell
@@ -77,9 +93,9 @@ openvag --simulate
 
 ## Planned direction
 
-1. Harden the ELM327 response boundary (echo, adapter chatter, multiple ECU
-   responses, timeout and error classification).
-2. Add a Wi-Fi TCP transport, then Bluetooth classic as an OS serial device.
+1. Validate the hardened ELM327 boundary and the Wi-Fi TCP transport against
+   a real adapter.
+2. Add Bluetooth classic as an OS serial device and, if useful, USB serial.
 3. Define a versioned session format with explicit data source and redaction.
 4. Expand capability-gated read-only OBD-II coverage.
 5. Investigate VAG module access separately; do not assume the ELM327 is a

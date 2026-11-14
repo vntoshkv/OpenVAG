@@ -52,7 +52,7 @@ This log records current project choices and open questions. Decisions may be re
 **Consequences:** If accepted, the "Windows-first" wording in `AGENTS.md` should be revised; this has not been changed yet.
 
 ### D-010 — Transport strategy for the available adapters
-**Status:** proposed (2026-11-14), requires hardware validation  
+**Status:** accepted for implementation (2026-11-14); Wi-Fi TCP backend implemented and loopback-tested; real hardware validation pending  
 **Decision:** Keep `LineTransport` as the adapter boundary and add separate backends:
 - Wi-Fi ELM327: plain TCP socket, standard library only;
 - Bluetooth classic ELM327: OS-provided serial device, likely via an optional `pyserial` extra;

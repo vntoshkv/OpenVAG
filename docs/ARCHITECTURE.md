@@ -64,6 +64,8 @@ Responses travel back through the same layers. Vehicle-specific decoders and met
 - Tests: the Python standard library `unittest` runner. This keeps the core
   test path dependency-free; pytest may be adopted later only if fixtures or
   plugins justify the extra dependency.
+- Wi-Fi ELM327: standard-library TCP transport (`openvag.tcp_transport`),
+  implemented; Bluetooth/USB serial is planned.
 - Serial access: evaluate `pyserial`.
 - CAN abstraction: evaluate `python-can`.
 - ISO-TP: evaluate `can-isotp`.
@@ -85,6 +87,8 @@ The core should depend on a documented adapter contract, not on a brand name. Th
 - safe close/cleanup behavior.
 
 Do not force ELM327, generic CAN, J2534, and a proprietary VCDS-compatible cable into an inaccurate one-size-fits-all abstraction. Use a small common interface plus explicit capabilities or specialized interfaces.
+
+For the line-oriented ELM327 path, `LineTransport` returns response lines without the ELM prompt. Echo, `SEARCHING...`, `BUS INIT`, and multiple ECU responses are normalized above the transport so that a TCP or serial backend does not need adapter-specific parsing. Wi-Fi uses a plain TCP socket; Bluetooth/USB serial backends can use the same line contract.
 
 ## 5. Protocol versus vehicle data
 
@@ -114,6 +118,7 @@ Avoid collapsing all failures into “no data.”
 
 - Unit tests for parsing, scaling, state machines, and data validation.
 - Protocol tests using deterministic byte-level fixtures.
+- TCP transport tests against a local loopback fake bridge.
 - Simulator tests for positive, negative, delayed, and missing responses.
 - Integration tests for supported adapters where hardware is available.
 - Manual vehicle test reports that record vehicle/ECU/software context and test conditions.
@@ -123,7 +128,8 @@ Hardware tests must be opt-in and must not run in CI automatically. Simulator su
 ## 8. Initial vertical slice
 
 Implement only a small, end-to-end read-only path:
-1. configure a serial port for a supported ELM327 device;
+1. configure a TCP endpoint for a Wi-Fi ELM327 bridge, or a serial port for a
+   supported adapter;
 2. initialize the adapter and report its responses/capabilities;
 3. request a few standard OBD-II values and DTCs;
 4. normalize results and errors;

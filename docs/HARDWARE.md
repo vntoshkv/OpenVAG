@@ -15,6 +15,14 @@ Initial development environment: macOS on Apple silicon, Python 3.9.6. Python
 3.9 is end-of-life; the compatibility floor will be reviewed before public
 release.
 
+### Transport implementation status
+
+- Wi-Fi TCP transport: implemented in `openvag.tcp_transport` using the
+  standard library; covered by loopback tests, **not yet tested against a real
+  adapter**.
+- Bluetooth classic / USB serial: not implemented.
+- No real-vehicle request has been performed.
+
 Validation vehicle: Volkswagen Touareg NF / 7P, 3.6 FSI, engine code CMTA
 (no hardware test performed yet).
 
