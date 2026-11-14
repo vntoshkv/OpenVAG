@@ -48,19 +48,22 @@ The repository contains a dependency-free Python prototype with:
 - a small read-only ELM327 command boundary with echo/chatter normalization,
   separate handling of multiple ECU responses, and explicit error
   classification;
-- adapter identification (`ATI`, `AT@1`, `ATDPN`) and per-command timeouts;
+- adapter identification (`ATI`, `AT@1`, `ATDPN`, `ATRV`) and per-command
+  timeouts;
 - a deterministic simulator;
-- standard OBD-II decoding for supported-PID capability bits, engine RPM,
-  vehicle speed, and stored DTCs;
+- capability-gated standard OBD-II data: supported-PID bitmaps (0100/0120/0140),
+  monitor status, common live-data PIDs, and stored, pending, and permanent
+  DTCs (03/07/0A), with raw response hex retained;
 - a Wi-Fi TCP transport for ELM327 bridges;
 - a serial transport for Bluetooth classic and USB adapters, using an optional
   `pyserial` extra; and
 - JSON session records with adapter metadata.
 
-It accepts only the read-only requests `0100`, `010C`, `010D`, and `03`. It
-cannot clear DTCs or send other diagnostic requests. Each request is recorded
-independently, so an unsupported, negative, malformed, or failed request does
-not discard successful results.
+It sends only a fixed allowlist of standard read-only requests. It cannot clear
+DTCs or send coding, adaptation, actuator, or security-access requests. Each
+request is recorded independently, so an unsupported, negative, malformed, or
+failed request does not discard successful results. The exact PID coverage and
+formulas are listed in [`docs/OBD_PIDS.md`](docs/OBD_PIDS.md).
 
 The Wi-Fi transport is covered by loopback tests and the serial transport by
 fake-device tests. No real adapter has been verified against a vehicle, and
@@ -111,7 +114,7 @@ openvag --simulate
 
 1. Validate the Wi-Fi and Bluetooth transports against the real adapters.
 2. Define a versioned session format with explicit data source and redaction.
-3. Expand capability-gated read-only OBD-II coverage.
+3. Extend the capability-gated snapshot beyond the current curated PID set.
 4. Investigate VAG module access separately; do not assume the ELM327 is a
    general ISO-TP/UDS transport.
 5. Add a versioned vehicle/ECU knowledge schema with provenance.
@@ -128,6 +131,7 @@ one receives a separate safety review.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — intended system boundaries.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — staged development plan.
 - [`docs/DATA_AND_SAFETY.md`](docs/DATA_AND_SAFETY.md) — provenance, verification, privacy, safety.
+- [`docs/OBD_PIDS.md`](docs/OBD_PIDS.md) — supported OBD-II PIDs, formulas, units, and verification status.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — decisions and open questions.
 - [`docs/HARDWARE.md`](docs/HARDWARE.md) — reference hardware and identification procedure.
 - [`docs/DEPENDENCY_REVIEW.md`](docs/DEPENDENCY_REVIEW.md) — dependency and license review.

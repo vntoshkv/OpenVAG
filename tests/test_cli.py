@@ -27,7 +27,9 @@ class CliTests(unittest.TestCase):
             saved = json.loads(target.read_text(encoding="utf-8"))
             self.assertEqual(saved["source"], "simulator")
             self.assertEqual(saved["adapter"]["protocol"], "A6")
-            self.assertEqual(len(saved["results"]), 4)
+            self.assertGreaterEqual(len(saved["results"]), 20)
+            requests = {result["request"] for result in saved["results"]}
+            self.assertTrue({"0100", "0120", "0140", "010C", "03", "07", "0A"} <= requests)
 
     def test_serial_option_wires_the_serial_transport_and_baud(self):
         with patch("openvag.cli.SerialLineTransport") as transport_class:

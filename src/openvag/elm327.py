@@ -50,8 +50,41 @@ class Elm327Adapter:
     """A deliberately read-only subset of the ELM327 interface."""
 
     _INITIALIZATION_COMMANDS = ("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0")
-    _IDENTIFICATION_COMMANDS = ("ATI", "AT@1", "ATDPN")
-    _READ_ONLY_REQUESTS = frozenset({"0100", "010C", "010D", "03"})
+    _IDENTIFICATION_COMMANDS = ("ATI", "AT@1", "ATDPN", "ATRV")
+    _READ_ONLY_REQUESTS = frozenset(
+        {
+            "0100",
+            "0101",
+            "0104",
+            "0105",
+            "0106",
+            "0107",
+            "0108",
+            "0109",
+            "010A",
+            "010B",
+            "010C",
+            "010D",
+            "010E",
+            "010F",
+            "0110",
+            "0111",
+            "011F",
+            "0120",
+            "0121",
+            "012F",
+            "0131",
+            "0133",
+            "0140",
+            "0142",
+            "0146",
+            "015C",
+            "015E",
+            "03",
+            "07",
+            "0A",
+        }
+    )
     _RESET_TIMEOUT = 5.0
     _ADAPTER_ERRORS = frozenset(
         {
@@ -111,9 +144,11 @@ class Elm327Adapter:
 
         description = self._identify("AT@1")
         protocol = self._identify("ATDPN")
+        voltage = self._identify("ATRV")
         replies["ATI"] = version
         replies["AT@1"] = description
         replies["ATDPN"] = protocol
+        replies["ATRV"] = voltage
 
         self._protocol = protocol
         self._connected = True

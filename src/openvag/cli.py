@@ -15,7 +15,16 @@ from .errors import (
     ServiceUnsupportedError,
     TransportTimeoutError,
 )
-from .obd import decode_dtc_response, decode_engine_rpm, decode_supported_pids, decode_vehicle_speed
+from .obd import (
+    LIVE_PID_ORDER,
+    PID_DECODERS,
+    Measurement,
+    MonitorStatus,
+    decode_dtc_response,
+    decode_pending_dtc_response,
+    decode_permanent_dtc_response,
+    decode_supported_pids,
+)
 from .serial_transport import SerialLineTransport, list_serial_ports
 from .session import DiagnosticSession
 from .simulator import SimulatedElm327Transport
@@ -36,61 +45,113 @@ def _status_for(error: DiagnosticError) -> str:
     return "failed"
 
 
-def collect_read_only_snapshot(adapter: Elm327Adapter) -> List[Dict[str, object]]:
-    """Collect each prototype request independently, retaining normalized errors.
+def _raw_hex(values) -> str:
+    return " ".join("{:02X}".format(value) for value in values)
 
-    Multiple ECU responses are recorded separately. ELM headers are disabled,
-    so ``response_index`` is an ordering hint, not a verified ECU identity.
+
+def _append_error(results, kind, request, error, response=None):
+    entry = {
+        "status": _status_for(error),
+        "kind": kind,
+        "request": request,
+        "error": str(error),
+    }
+    if response is not None:
+        entry["response_index"] = response.response_index
+        entry["raw_hex"] = _raw_hex(response.values)
+    results.append(entry)
+
+
+def _append_decoded(results, kind, request, response, decoded, pid=None):
+    entry = {
+        "status": "ok",
+        "kind": kind,
+        "request": request,
+        "response_index": response.response_index,
+        "raw_hex": _raw_hex(response.values),
+    }
+    if pid is not None:
+        entry["pid"] = pid
+    if isinstance(decoded, MonitorStatus):
+        entry.update(decoded.__dict__)
+    elif isinstance(decoded, Measurement):
+        entry.update(decoded.__dict__)
+    elif kind in {"dtcs", "pending_dtcs", "permanent_dtcs"}:
+        entry["codes"] = decoded
+    else:
+        entry["supported_pids"] = decoded
+    results.append(entry)
+
+
+def collect_read_only_snapshot(adapter: Elm327Adapter) -> List[Dict[str, object]]:
+    """Collect a capability-gated, read-only OBD-II snapshot.
+
+    Supported-PID bitmaps (0100/0120/0140) are read first; only advertised
+    live-data PIDs are requested afterwards. Multiple ECU responses are
+    recorded separately. ELM headers are disabled, so ``response_index`` is an
+    ordering hint, not a verified ECU identity.
     """
     results: List[Dict[str, object]] = []
-    requests = (
-        ("capabilities", "0100", decode_supported_pids),
-        ("measurement", "010C", decode_engine_rpm),
-        ("measurement", "010D", decode_vehicle_speed),
-        ("dtcs", "03", decode_dtc_response),
-    )
-    for kind, request, decoder in requests:
+    supported = set()
+
+    bitmaps = ((0x00, "0100"), (0x20, "0120"), (0x40, "0140"))
+    for index, (base_pid, request) in enumerate(bitmaps):
+        if index and base_pid not in supported:
+            break
         try:
             responses = adapter.request_obd(request)
         except DiagnosticError as error:
-            results.append(
-                {
-                    "status": _status_for(error),
-                    "kind": kind,
-                    "request": request,
-                    "error": str(error),
-                }
-            )
-            continue
+            _append_error(results, "capabilities", request, error)
+            break
+        for response in responses:
+            try:
+                pids = decode_supported_pids(response.values, base_pid)
+            except DiagnosticError as error:
+                _append_error(results, "capabilities", request, error, response)
+                continue
+            supported.update(pids)
+            _append_decoded(results, "capabilities", request, response, pids, pid=base_pid)
 
+    if supported:
+        live_pids = [pid for pid in LIVE_PID_ORDER if pid in supported]
+    else:
+        # A clone that cannot answer 0100 still gets a minimal common set.
+        live_pids = [0x01, 0x05, 0x0C, 0x0D, 0x0F]
+
+    for pid in live_pids:
+        request = "01{:02X}".format(pid)
+        kind = "monitors" if pid == 0x01 else "measurement"
+        try:
+            responses = adapter.request_obd(request)
+        except DiagnosticError as error:
+            _append_error(results, kind, request, error)
+            continue
+        for response in responses:
+            try:
+                decoded = PID_DECODERS[pid](response.values)
+            except DiagnosticError as error:
+                _append_error(results, kind, request, error, response)
+                continue
+            _append_decoded(results, kind, request, response, decoded, pid=pid)
+
+    dtc_requests = (
+        ("dtcs", "03", decode_dtc_response),
+        ("pending_dtcs", "07", decode_pending_dtc_response),
+        ("permanent_dtcs", "0A", decode_permanent_dtc_response),
+    )
+    for kind, request, decoder in dtc_requests:
+        try:
+            responses = adapter.request_obd(request)
+        except DiagnosticError as error:
+            _append_error(results, kind, request, error)
+            continue
         for response in responses:
             try:
                 decoded = decoder(response.values)
             except DiagnosticError as error:
-                results.append(
-                    {
-                        "status": _status_for(error),
-                        "kind": kind,
-                        "request": request,
-                        "response_index": response.response_index,
-                        "error": str(error),
-                    }
-                )
+                _append_error(results, kind, request, error, response)
                 continue
-
-            entry: Dict[str, object] = {
-                "status": "ok",
-                "kind": kind,
-                "request": request,
-                "response_index": response.response_index,
-            }
-            if kind == "measurement":
-                entry.update(decoded.__dict__)
-            elif kind == "capabilities":
-                entry["supported_pids"] = decoded
-            else:
-                entry["codes"] = decoded
-            results.append(entry)
+            _append_decoded(results, kind, request, response, decoded)
     return results
 
 
@@ -110,6 +171,7 @@ def _adapter_info(capabilities: AdapterCapabilities, protocol: str, transport: s
         "description": capabilities.description,
         "protocol": protocol,
         "transport": transport,
+        "voltage": capabilities.initialization.get("ATRV", "unknown"),
     }
 
 

@@ -28,10 +28,11 @@ The roadmap is capability-based, not date-based. A milestone is complete only wh
 - Add privacy-safe logging and session export.
 
 **Current note (2026-11-14):** a line-oriented transport boundary, Wi-Fi TCP
-and Bluetooth/USB serial backends, deterministic simulator, multi-ECU response
-handling, and explicit error classification are implemented and covered by
-tests. Hardware validation, cancellation, and privacy-safe export remain
-incomplete.
+and Bluetooth/USB serial backends, deterministic simulator, capability-gated
+standard PID snapshot (including monitors and stored/pending/permanent DTCs),
+multi-ECU response handling, and explicit error classification are implemented
+and covered by tests. Hardware validation, cancellation, and privacy-safe
+export remain incomplete.
 
 **Exit criteria:** core behavior can be tested in CI without a car or physical adapter.
 
