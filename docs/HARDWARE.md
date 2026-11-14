@@ -20,7 +20,9 @@ release.
 - Wi-Fi TCP transport: implemented in `openvag.tcp_transport` using the
   standard library; covered by loopback tests, **not yet tested against a real
   adapter**.
-- Bluetooth classic / USB serial: not implemented.
+- Bluetooth classic / USB serial: implemented in `openvag.serial_transport`
+  using the optional `pyserial` extra; covered by fake-device tests, **not yet
+  tested against a real adapter**.
 - No real-vehicle request has been performed.
 
 Validation vehicle: Volkswagen Touareg NF / 7P, 3.6 FSI, engine code CMTA
@@ -83,7 +85,49 @@ This is a manual, opt-in hardware step. It performs read-only requests only.
 If the first request times out, stop and capture the raw response rather than
 increasing timeouts blindly; the adapter may still be searching for a protocol.
 
-## 6. What is explicitly not claimed
+## 6. First real Bluetooth run
+
+This is a manual, opt-in hardware step. It performs read-only requests only.
+
+1. Pair the ELM327 Bluetooth classic adapter in the OS Bluetooth settings.
+   Common pairing PINs are `1234` and `0000`; use the value supplied with the
+   adapter. A Bluetooth LE-only module is not supported by this serial path.
+2. On macOS, confirm that a call-out serial device exists:
+
+   ```shell
+   ls /dev/cu.*
+   system_profiler SPBluetoothDataType | grep -A 5 -i ELM
+   ```
+
+3. Install the optional serial dependency (preferably in a virtual
+   environment) and list ports:
+
+   ```shell
+   python3 -m venv .venv
+   source .venv/bin/activate
+   python -m pip install -e '.[serial]'
+   PYTHONPATH=src python3 -m openvag.cli --list-ports
+   ```
+
+4. Connect using the `/dev/cu.*` name (prefer `cu.*` over `tty.*` for outgoing
+   calls):
+
+   ```shell
+   PYTHONPATH=src python3 -m openvag.cli --serial /dev/cu.ELM327-XXXX --baud 38400 --session bluetooth-session.json
+   ```
+
+   The default baud rate is 38400; some clones use 9600 or 115200. Confirm the
+   value for the specific adapter instead of cycling through them blindly.
+
+5. Record the observed `ATI`, `AT@1`, and `ATDPN` output in this file with the
+   date, adapter label, host OS, paired device name, baud rate, and vehicle
+   state. Label it `observed`, not `verified`.
+
+If no `/dev/cu.*` device appears, the module may not expose Bluetooth classic
+SPP, or pairing may have failed. Record that result rather than assuming the
+serial path is broken.
+
+## 7. What is explicitly not claimed
 
 - No adapter has been verified against any vehicle yet.
 - No simulated result is real vehicle data.

@@ -1,4 +1,4 @@
-"""CLI entry point: deterministic simulator or a real Wi-Fi ELM327 bridge."""
+"""CLI entry point: simulator, Wi-Fi TCP, or Bluetooth/USB serial ELM327."""
 
 import argparse
 import json
@@ -16,6 +16,7 @@ from .errors import (
     TransportTimeoutError,
 )
 from .obd import decode_dtc_response, decode_engine_rpm, decode_supported_pids, decode_vehicle_speed
+from .serial_transport import SerialLineTransport, list_serial_ports
 from .session import DiagnosticSession
 from .simulator import SimulatedElm327Transport
 from .tcp_transport import TcpLineTransport
@@ -103,17 +104,18 @@ def _parse_tcp_endpoint(value: str) -> Tuple[str, int]:
     return host, port
 
 
-def _adapter_info(capabilities: AdapterCapabilities, protocol: str) -> Dict[str, str]:
+def _adapter_info(capabilities: AdapterCapabilities, protocol: str, transport: str) -> Dict[str, str]:
     return {
         "version": capabilities.version,
         "description": capabilities.description,
         "protocol": protocol,
+        "transport": transport,
     }
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="OpenVAG read-only OBD-II prototype")
-    endpoint_group = parser.add_mutually_exclusive_group(required=True)
+    endpoint_group = parser.add_mutually_exclusive_group()
     endpoint_group.add_argument(
         "--simulate",
         action="store_true",
@@ -125,22 +127,62 @@ def main(argv: Optional[List[str]] = None) -> int:
         type=_parse_tcp_endpoint,
         help="connect to an ELM327 Wi-Fi bridge over TCP (real, read-only requests)",
     )
+    endpoint_group.add_argument(
+        "--serial",
+        metavar="PORT",
+        help="connect to an ELM327 Bluetooth/USB serial port (requires .[serial])",
+    )
+    parser.add_argument(
+        "--baud",
+        type=int,
+        default=38400,
+        metavar="RATE",
+        help="serial baud rate for --serial (default: 38400)",
+    )
+    parser.add_argument(
+        "--list-ports",
+        action="store_true",
+        help="list serial ports (requires .[serial]) and exit",
+    )
     parser.add_argument("--session", type=Path, help="write a JSON session")
     args = parser.parse_args(argv)
 
-    source = "simulator" if args.simulate else "real"
+    if args.list_ports:
+        if args.simulate or args.tcp or args.serial:
+            parser.error("--list-ports cannot be combined with a connection option")
+        try:
+            ports = list_serial_ports()
+        except DiagnosticError as error:
+            print(json.dumps({"error": str(error)}, indent=2), file=sys.stderr)
+            return 1
+        print(json.dumps({"serial_ports": ports}, indent=2))
+        return 0
+
+    if not (args.simulate or args.tcp or args.serial):
+        parser.error("choose one of --simulate, --tcp, or --serial")
+    if args.baud <= 0:
+        parser.error("--baud must be positive")
+
     if args.simulate:
+        source = "simulator"
+        transport_name = "simulator"
         transport = SimulatedElm327Transport()
-    else:
+    elif args.tcp:
+        source = "real"
+        transport_name = "tcp"
         host, port = args.tcp
         transport = TcpLineTransport(host, port)
+    else:
+        source = "real"
+        transport_name = "serial"
+        transport = SerialLineTransport(args.serial, baudrate=args.baud)
 
     adapter = Elm327Adapter(transport)
     try:
         capabilities = adapter.connect()
         results = collect_read_only_snapshot(adapter)
         protocol = adapter.describe_protocol()
-        adapter_info = _adapter_info(capabilities, protocol)
+        adapter_info = _adapter_info(capabilities, protocol, transport_name)
         session = DiagnosticSession.create(
             source,
             capabilities.version,

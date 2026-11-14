@@ -1,27 +1,33 @@
 # Dependency Review
 
 This record is intentionally small and must be updated before adopting a new
-runtime dependency. It is not a license selection for OpenVAG Diagnostic.
+runtime dependency. It records license and maintenance findings; it is not a
+substitute for the project's `LICENSE`.
 
 ## DR-001 — pySerial
 
-**Reviewed:** 2026-10-28  
-**Status:** not adopted
+**Reviewed:** 2026-10-28; re-reviewed 2026-11-14  
+**Status:** adopted as an optional extra (`openvag[serial]`)
 
 pySerial provides a serial-port abstraction for Windows, macOS, Linux, and BSD
-and is distributed under a BSD license. Its PyPI release history currently lists
-version 3.5, released on 2020-11-23. The project therefore is not being added as
-a default dependency at this stage: a hardware backend requires a deliberate
-maintenance and compatibility decision after the actual ELM327 device is
-identified and tested.
+and is distributed under a BSD (3-clause style) license. Its PyPI release
+history lists version 3.5, released on 2020-11-23. It is used only by
+`openvag.serial_transport` for Bluetooth classic and USB serial adapters. The
+core package, simulator, Wi-Fi TCP transport, and test suite remain
+dependency-free; tests inject a fake serial device.
+
+The project chose an optional dependency instead of implementing POSIX
+`termios` plus a separate Windows path, because that would duplicate a
+well-understood, portable layer. pySerial is not imported unless `--serial` or
+`--list-ports` is used.
 
 **Provenance:** [pySerial documentation](https://pyserial.readthedocs.io/en/latest/pyserial.html), [PyPI project metadata](https://pypi.org/project/pyserial/), [upstream license](https://github.com/pyserial/pyserial/blob/master/LICENSE.txt).
 
-**Consequences:** the present package has no runtime third-party dependencies
-and supports only its simulator transport. This does not imply that pySerial is
-unsuitable; it records that it has not passed the project's adoption review.
-Wi-Fi ELM327 adapters use TCP and do not need pySerial; Bluetooth classic and
-USB adapters would.
+**Consequences:** install with `pip install -e '.[serial]'`. Without it,
+`--serial` and `--list-ports` fail with an actionable error instead of
+crashing. Bluetooth classic requires the OS to expose the paired adapter as a
+serial port (on macOS usually `/dev/cu.*`); USB adapters use the same backend.
+Wi-Fi ELM327 adapters use TCP and do not need pySerial.
 
 ## Reviewed candidates — not adopted (2026-11-14)
 

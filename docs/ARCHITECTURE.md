@@ -65,12 +65,16 @@ Responses travel back through the same layers. Vehicle-specific decoders and met
   test path dependency-free; pytest may be adopted later only if fixtures or
   plugins justify the extra dependency.
 - Wi-Fi ELM327: standard-library TCP transport (`openvag.tcp_transport`),
-  implemented; Bluetooth/USB serial is planned.
-- Serial access: evaluate `pyserial`.
+  implemented.
+- Bluetooth/USB serial: optional `pyserial` extra and
+  `openvag.serial_transport`, implemented; it is not required by the core or
+  by CI.
 - CAN abstraction: evaluate `python-can`.
 - ISO-TP: evaluate `can-isotp`.
 - UDS: evaluate `udsoncan`.
-- OBD-II over ELM-compatible devices: evaluate `python-OBD`.
+- OBD-II over ELM-compatible devices: independent minimal implementation;
+  `python-OBD` was reviewed but not adopted (GPL, see
+  [`DEPENDENCY_REVIEW.md`](DEPENDENCY_REVIEW.md)).
 - Persistent sessions: SQLite is a reasonable initial option.
 - Desktop UI: evaluate PySide6 after the first CLI prototype.
 
@@ -88,7 +92,7 @@ The core should depend on a documented adapter contract, not on a brand name. Th
 
 Do not force ELM327, generic CAN, J2534, and a proprietary VCDS-compatible cable into an inaccurate one-size-fits-all abstraction. Use a small common interface plus explicit capabilities or specialized interfaces.
 
-For the line-oriented ELM327 path, `LineTransport` returns response lines without the ELM prompt. Echo, `SEARCHING...`, `BUS INIT`, and multiple ECU responses are normalized above the transport so that a TCP or serial backend does not need adapter-specific parsing. Wi-Fi uses a plain TCP socket; Bluetooth/USB serial backends can use the same line contract.
+For the line-oriented ELM327 path, `LineTransport` returns response lines without the ELM prompt. Echo, `SEARCHING...`, `BUS INIT`, and multiple ECU responses are normalized above the transport so that a TCP or serial backend does not need adapter-specific parsing. Wi-Fi uses a plain TCP socket; Bluetooth/USB serial uses the optional `pyserial` backend behind the same line contract.
 
 ## 5. Protocol versus vehicle data
 
@@ -119,6 +123,8 @@ Avoid collapsing all failures into “no data.”
 - Unit tests for parsing, scaling, state machines, and data validation.
 - Protocol tests using deterministic byte-level fixtures.
 - TCP transport tests against a local loopback fake bridge.
+- Serial transport tests with an injected fake device; pySerial is not required
+  in CI.
 - Simulator tests for positive, negative, delayed, and missing responses.
 - Integration tests for supported adapters where hardware is available.
 - Manual vehicle test reports that record vehicle/ECU/software context and test conditions.

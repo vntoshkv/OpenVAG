@@ -52,7 +52,9 @@ The repository contains a dependency-free Python prototype with:
 - a deterministic simulator;
 - standard OBD-II decoding for supported-PID capability bits, engine RPM,
   vehicle speed, and stored DTCs;
-- a Wi-Fi TCP transport for ELM327 bridges; and
+- a Wi-Fi TCP transport for ELM327 bridges;
+- a serial transport for Bluetooth classic and USB adapters, using an optional
+  `pyserial` extra; and
 - JSON session records with adapter metadata.
 
 It accepts only the read-only requests `0100`, `010C`, `010D`, and `03`. It
@@ -60,10 +62,9 @@ cannot clear DTCs or send other diagnostic requests. Each request is recorded
 independently, so an unsupported, negative, malformed, or failed request does
 not discard successful results.
 
-The Wi-Fi transport is covered by loopback tests. There is deliberately no
-serial or Bluetooth backend yet, and no real adapter has been verified against
-a vehicle. The included simulated data must never be represented as vehicle
-data.
+The Wi-Fi transport is covered by loopback tests and the serial transport by
+fake-device tests. No real adapter has been verified against a vehicle, and
+the included simulated data must never be represented as vehicle data.
 
 ## Quick start
 
@@ -84,6 +85,21 @@ PYTHONPATH=src python3 -m openvag.cli --tcp 192.168.0.10:35000 --session wifi-se
 
 No real adapter has been verified yet; see [`docs/HARDWARE.md`](docs/HARDWARE.md).
 
+Bluetooth classic adapters appear as OS serial devices after pairing. A virtual
+environment is recommended so the system Python is not modified:
+
+```shell
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[serial]'
+PYTHONPATH=src python3 -m openvag.cli --list-ports
+PYTHONPATH=src python3 -m openvag.cli --serial /dev/cu.ELM327-XXXX --baud 38400 --session bluetooth-session.json
+```
+
+On macOS the port is usually `/dev/cu.*`; the default baud rate is 38400, but
+confirm it for the specific adapter. The same backend works for USB serial
+ELM327 adapters.
+
 Editable install (provides the `openvag` console script):
 
 ```shell
@@ -93,14 +109,12 @@ openvag --simulate
 
 ## Planned direction
 
-1. Validate the hardened ELM327 boundary and the Wi-Fi TCP transport against
-   a real adapter.
-2. Add Bluetooth classic as an OS serial device and, if useful, USB serial.
-3. Define a versioned session format with explicit data source and redaction.
-4. Expand capability-gated read-only OBD-II coverage.
-5. Investigate VAG module access separately; do not assume the ELM327 is a
+1. Validate the Wi-Fi and Bluetooth transports against the real adapters.
+2. Define a versioned session format with explicit data source and redaction.
+3. Expand capability-gated read-only OBD-II coverage.
+4. Investigate VAG module access separately; do not assume the ELM327 is a
    general ISO-TP/UDS transport.
-6. Add a versioned vehicle/ECU knowledge schema with provenance.
+5. Add a versioned vehicle/ECU knowledge schema with provenance.
 
 Advanced functions such as coding, adaptations, actuator tests, and security
 access remain out of scope until the read-only foundation is stable and each

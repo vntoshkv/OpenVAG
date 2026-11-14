@@ -52,16 +52,16 @@ This log records current project choices and open questions. Decisions may be re
 **Consequences:** If accepted, the "Windows-first" wording in `AGENTS.md` should be revised; this has not been changed yet.
 
 ### D-010 — Transport strategy for the available adapters
-**Status:** accepted for implementation (2026-11-14); Wi-Fi TCP backend implemented and loopback-tested; real hardware validation pending  
+**Status:** accepted for implementation (2026-11-14); Wi-Fi TCP and Bluetooth/USB serial backends implemented and tested without hardware; real hardware validation pending  
 **Decision:** Keep `LineTransport` as the adapter boundary and add separate backends:
 - Wi-Fi ELM327: plain TCP socket, standard library only;
-- Bluetooth classic ELM327: OS-provided serial device, likely via an optional `pyserial` extra;
+- Bluetooth classic ELM327: OS-provided serial device via an optional `pyserial` extra;
 - USB ELM327: the same serial path.
 
 Do not force generic CAN/UDS through the ELM327 backend. Future CAN/UDS support is a separate transport and protocol decision, evaluated after reconnaissance.
 
 **Reason:** Initial development uses Wi-Fi and Bluetooth ELM327 adapters on a macOS host. TCP is dependency-free and testable first; serial covers Bluetooth and USB without a platform-locked design. ELM327 is not assumed to be a general ISO-TP/UDS transport.
-**Consequences:** No adapter-specific assumptions belong in protocol decoders. Read-only request policy remains enforced above the transport. Adoption of `pyserial` still requires the dependency review to be updated. Hardware claims remain blocked until an observed transcript is recorded in [`HARDWARE.md`](HARDWARE.md).
+**Consequences:** No adapter-specific assumptions belong in protocol decoders. Read-only request policy remains enforced above the transport. `pyserial` is an optional extra recorded in DR-001; the core and CI remain dependency-free. Hardware claims remain blocked until an observed transcript is recorded in [`HARDWARE.md`](HARDWARE.md).
 
 ### D-011 — Apache-2.0 license
 **Status:** accepted (2026-11-14)  
